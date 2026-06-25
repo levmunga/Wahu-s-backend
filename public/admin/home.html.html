@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wahu's Closet — Admin</title>
+<style>
+  :root{
+    --cream:#FBF8F3; --sand:#EFE9DD; --line:#E4DFD3;
+    --ink:#16181D; --ink-soft:#4A4D55; --ink-faint:#8A8D94;
+    --blue:#0066FF; --blue-deep:#0047B3; --blue-pale:#E8F0FF;
+    --success:#1E9E5A; --danger:#C62828; --danger-bg:#FDECEC;
+    --r-sm:8px; --r-md:14px; --r-lg:20px;
+    --shadow-sm:0 2px 10px rgba(22,24,29,0.06);
+    --shadow-md:0 10px 32px rgba(22,24,29,0.10);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--cream); color:var(--ink); min-height:100vh;
+  }
+  a{color:var(--blue);}
+
+  /* ---- Login screen ---- */
+  .auth-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .auth-card{
+    background:#fff; border:1px solid var(--line); border-radius:var(--r-lg);
+    padding:2.4rem; width:100%; max-width:380px; box-shadow:var(--shadow-md);
+  }
+  .auth-card h1{font-size:1.3rem; margin:0 0 0.3rem;}
+  .auth-card p{color:var(--ink-soft); font-size:0.88rem; margin:0 0 1.4rem;}
+  .field{margin-bottom:1rem;}
+  .field label{display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px;}
+  .field input, .field select, .field textarea{
+    width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:var(--r-sm);
+    font-size:0.92rem; font-family:inherit; outline:none; transition:border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--blue);}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    border:none; border-radius:var(--r-sm); padding:11px 18px; font-size:0.88rem; font-weight:700;
+    cursor:pointer; font-family:inherit; transition:opacity 0.15s, transform 0.1s;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:var(--blue); color:#fff;}
+  .btn-primary:hover{background:var(--blue-deep);}
+  .btn-block{width:100%;}
+  .btn-outline{background:#fff; border:1.5px solid var(--line); color:var(--ink);}
+  .btn-outline:hover{background:var(--sand);}
+  .btn-danger{background:var(--danger-bg); color:var(--danger);}
+  .btn-danger:hover{background:#FBDADA;}
+  .btn-sm{padding:7px 12px; font-size:0.78rem;}
+  .msg{font-size:0.85rem; border-radius:var(--r-sm); padding:0.7rem 0.9rem; margin-bottom:1rem; display:none;}
+  .msg.show{display:block;}
+  .msg.error{background:var(--danger-bg); color:var(--danger); border:1px solid #F5C2C2;}
+  .msg.success{background:#E8F7EF; color:#1E7E45; border:1px solid #BCE6CC;}
+  .switcher{text-align:center; margin-top:1rem; font-size:0.85rem; color:var(--ink-soft);}
+  .switcher a{font-weight:600; text-decoration:none; cursor:pointer;}
+
+  /* ---- App shell ---- */
+  .app{display:none; min-height:100vh;}
+  .app.show{display:flex; flex-direction:column;}
+  header.topbar{
+    background:#fff; border-bottom:1px solid var(--line); padding:14px 24px;
+    display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10;
+  }
+  .topbar h1{font-size:1.05rem; margin:0; font-weight:800;}
+  .topbar .who{font-size:0.8rem; color:var(--ink-faint);}
+  main{flex:1; padding:24px; max-width:1100px; margin:0 auto; width:100%;}
+
+  .toolbar{display:flex; justify-content:space-between; align-items:center; margin-bottom:1.4rem; gap:1rem; flex-wrap:wrap;}
+  .toolbar h2{font-size:1.2rem; margin:0;}
+  select.filter{width:auto; min-width:160px;}
+
+  /* ---- Product table/cards ---- */
+  .product-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:1rem;}
+  .product-card{
+    background:#fff; border:1px solid var(--line); border-radius:var(--r-md);
+    overflow:hidden; box-shadow:var(--shadow-sm);
+  }
+  .pc-img{
+    width:100%; aspect-ratio:1; background:var(--sand); display:flex; align-items:center;
+    justify-content:center; font-size:2rem; background-size:cover; background-position:center;
+  }
+  .pc-body{padding:12px 14px;}
+  .pc-body h3{font-size:0.92rem; margin:0 0 4px; line-height:1.3;}
+  .pc-cat{font-size:0.72rem; color:var(--ink-faint); text-transform:uppercase; font-weight:700; letter-spacing:0.03em;}
+  .pc-price{font-size:0.95rem; font-weight:800; margin:6px 0 10px;}
+  .pc-price .old{font-size:0.78rem; color:var(--ink-faint); text-decoration:line-through; font-weight:600; margin-left:6px;}
+  .pc-actions{display:flex; gap:6px;}
+  .pc-actions .btn{flex:1;}
+  .empty-state{
+    text-align:center; padding:4rem 1rem; color:var(--ink-faint);
+  }
+  .empty-state h3{color:var(--ink); margin-bottom:0.4rem;}
+
+  /* ---- Editor modal ---- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(22,24,29,0.5);
+    align-items:flex-start; justify-content:center; padding:24px; overflow-y:auto; z-index:100;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:#fff; border-radius:var(--r-lg); width:100%; max-width:640px;
+    padding:2rem; margin:2rem 0;
+  }
+  .modal h2{margin:0 0 1.2rem; font-size:1.2rem;}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:1rem;}
+  .colors-list{display:flex; flex-direction:column; gap:10px; margin-bottom:1rem;}
+  .color-row{
+    display:flex; align-items:center; gap:10px; border:1px solid var(--line);
+    border-radius:var(--r-sm); padding:8px 10px;
+  }
+  .color-row .thumb{
+    width:44px; height:44px; border-radius:8px; background:var(--sand); flex-shrink:0;
+    background-size:cover; background-position:center; overflow:hidden; position:relative;
+  }
+  .color-row .thumb input[type=file]{
+    position:absolute; inset:0; opacity:0; cursor:pointer;
+  }
+  .color-row input[type=text]{flex:1; padding:7px 9px; border:1px solid var(--line); border-radius:6px; font-size:0.85rem;}
+  .color-row input[type=color]{width:34px; height:34px; border:none; padding:0; border-radius:6px; cursor:pointer;}
+  .color-row .remove-color{background:none; border:none; cursor:pointer; color:var(--danger); font-size:1.1rem; padding:4px;}
+  .modal-actions{display:flex; gap:10px; margin-top:1.4rem; justify-content:flex-end;}
+  .checkbox-row{display:flex; gap:1.4rem; margin-bottom:1rem;}
+  .checkbox-row label{display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;}
+
+  .spinner{
+    display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4);
+    border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+  <!-- ============ LOGIN / SETUP SCREEN ============ -->
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <h1 id="authTitle">Admin Login</h1>
+      <p id="authSubtitle">Manage products for Wahu's Closet.</p>
+      <div class="msg" id="authMsg"></div>
+
+      <div id="loginFields">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" id="loginUsername" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary btn-block" id="loginBtn">Log In</button>
+      </div>
+
+      <div id="setupFields" style="display:none;">
+        <div class="field">
+          <label>Choose a Username</label>
+          <input type="text" id="setupUsername" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label>Choose a Password (min 6 characters)</label>
+          <input type="password" id="setupPassword" autocomplete="new-password" />
+        </div>
+        <button class="btn btn-primary btn-block" id="setupBtn">Create Admin Account</button>
+      </div>
+
+      <div class="switcher">
+        <span id="switchToSetupWrap">First time here? <a id="switchToSetup">Create an admin account</a></span>
+        <span id="switchToLoginWrap" style="display:none;">Already have an account? <a id="switchToLogin">Log in</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MAIN APP ============ -->
+  <div class="app" id="app">
+    <header class="topbar">
+      <h1>Wahu's Closet — Admin</h1>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span class="who" id="whoLabel"></span>
+        <button class="btn btn-outline btn-sm" id="logoutBtn">Log Out</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="toolbar">
+        <h2>Products</h2>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <select class="filter" id="categoryFilter">
+            <option value="all">All categories</option>
+            <option value="women">Women</option>
+            <option value="men">Men</option>
+            <option value="children">Children</option>
+            <option value="bags">Bags</option>
+            <option value="shoes">Shoes</option>
+            <option value="beauty">Beauty</option>
+            <option value="innerwear">Innerwear</option>
+            <option value="accessories">Accessories</option>
+          </select>
+          <button class="btn btn-primary" id="addProductBtn">+ Add Product</button>
+        </div>
+      </div>
+
+      <div id="productGrid" class="product-grid"></div>
+      <div id="emptyState" class="empty-state" style="display:none;">
+        <h3>No products yet</h3>
+        <p>Click "+ Add Product" to add your first item.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ PRODUCT EDITOR MODAL ============ -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">Add Product</h2>
+      <div class="msg" id="modalMsg"></div>
+
+      <div class="field">
+        <label>Product Name</label>
+        <input type="text" id="fName" placeholder="e.g. Wrap Midi Dress" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="fCategory">
+            <option value="women">Women</option>
+            <option value="men">Men</option>
+            <option value="children">Children</option>
+            <option value="bags">Bags</option>
+            <option value="shoes">Shoes</option>
+            <option value="beauty">Beauty</option>
+            <option value="innerwear">Innerwear</option>
+            <option value="accessories">Accessories</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Badge</label>
+          <select id="fBadge">
+            <option value="">None</option>
+            <option value="New">New</option>
+            <option value="Sale">Sale</option>
+            <option value="Best Seller">Best Seller</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Price (KSh)</label>
+          <input type="number" id="fPrice" placeholder="2300" />
+        </div>
+        <div class="field">
+          <label>Compare-at Price (optional)</label>
+          <input type="number" id="fCompareAt" placeholder="2999" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Sizes (comma-separated, leave blank if not sized — e.g. bags)</label>
+        <input type="text" id="fSizes" placeholder="S, M, L, XL" />
+      </div>
+
+      <div class="field">
+        <label>Description</label>
+        <textarea id="fDescription" rows="3" placeholder="Short product description..."></textarea>
+      </div>
+
+      <div class="field">
+        <label>Care Instructions</label>
+        <textarea id="fCare" rows="2" placeholder="e.g. Machine wash cold..."></textarea>
+      </div>
+
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="fIsNew" /> Mark as New Arrival</label>
+        <label><input type="checkbox" id="fIsBest" /> Mark as Best Seller</label>
+      </div>
+
+      <label style="font-size:0.82rem; font-weight:600; display:block; margin-bottom:8px;">Colors &amp; Photos</label>
+      <div class="colors-list" id="colorsList"></div>
+      <button class="btn btn-outline btn-sm" id="addColorBtn" type="button">+ Add Color</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="cancelModalBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveProductBtn">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const API = ""; // same-origin; change to your deployed backend URL if hosting the admin panel separately
+
+let currentProductId = null; // null = creating new, otherwise editing
+let colorRows = []; // [{name, hex, imageId, previewUrl, fileToUpload}]
+
+// ---------------- AUTH ----------------
+
+function showMsg(el, text, type){
+  el.textContent = text;
+  el.className = "msg show " + type;
+}
+function hideMsg(el){
+  el.className = "msg";
+}
+
+document.getElementById("switchToSetup").addEventListener("click", () => {
+  document.getElementById("loginFields").style.display = "none";
+  document.getElementById("setupFields").style.display = "block";
+  document.getElementById("switchToSetupWrap").style.display = "none";
+  document.getElementById("switchToLoginWrap").style.display = "inline";
+  document.getElementById("authTitle").textContent = "Create Admin Account";
+});
+document.getElementById("switchToLogin").addEventListener("click", () => {
+  document.getElementById("loginFields").style.display = "block";
+  document.getElementById("setupFields").style.display = "none";
+  document.getElementById("switchToSetupWrap").style.display = "inline";
+  document.getElementById("switchToLoginWrap").style.display = "none";
+  document.getElementById("authTitle").textContent = "Admin Login";
+});
+
+document.getElementById("setupBtn").addEventListener("click", async () => {
+  const username = document.getElementById("setupUsername").value.trim();
+  const password = document.getElementById("setupPassword").value;
+  const msgEl = document.getElementById("authMsg");
+  hideMsg(msgEl);
+  if (!username || password.length < 6) {
+    showMsg(msgEl, "Enter a username and a password of at least 6 characters.", "error");
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/api/admin/setup`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(msgEl, data.error || "Could not create account.", "error"); return; }
+    showMsg(msgEl, "Account created! Logging you in...", "success");
+    await doLogin(username, password);
+  } catch (e) {
+    showMsg(msgEl, "Could not reach the server.", "error");
+  }
+});
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  await doLogin(username, password);
+});
+
+async function doLogin(username, password){
+  const msgEl = document.getElementById("authMsg");
+  hideMsg(msgEl);
+  try {
+    const res = await fetch(`${API}/api/admin/login`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(msgEl, data.error || "Login failed.", "error"); return; }
+    enterApp(data.username);
+  } catch (e) {
+    showMsg(msgEl, "Could not reach the server.", "error");
+  }
+}
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await fetch(`${API}/api/admin/logout`, { method: "POST", credentials: "include" });
+  document.getElementById("app").classList.remove("show");
+  document.getElementById("authScreen").style.display = "flex";
+});
+
+function enterApp(username){
+  document.getElementById("authScreen").style.display = "none";
+  document.getElementById("app").classList.add("show");
+  document.getElementById("whoLabel").textContent = "Logged in as " + username;
+  loadProducts();
+}
+
+// On load, check if a session already exists so refreshing doesn't log you out.
+(async function checkSession(){
+  try {
+    const res = await fetch(`${API}/api/admin/me`, { credentials: "include" });
+    if (res.ok) {
+      const data = await res.json();
+      enterApp(data.username);
+    }
+  } catch (e) { /* not logged in, show login screen as default */ }
+})();
+
+// ---------------- PRODUCT LIST ----------------
+
+document.getElementById("categoryFilter").addEventListener("change", loadProducts);
+
+async function loadProducts(){
+  const cat = document.getElementById("categoryFilter").value;
+  const url = cat === "all" ? `${API}/api/admin/products` : `${API}/api/admin/products?category=${cat}`;
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) return;
+  const list = await res.json();
+  renderProductGrid(list);
+}
+
+function renderProductGrid(list){
+  const grid = document.getElementById("productGrid");
+  const empty = document.getElementById("emptyState");
+  if (!list.length) {
+    grid.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+  grid.innerHTML = list.map(p => {
+    const thumb = p.colors[0] && p.colors[0].imageId
+      ? `style="background-image:url('${API}/api/images/${p.colors[0].imageId}')"`
+      : "";
+    const icon = p.colors[0] && p.colors[0].imageId ? "" : "🛍️";
+    return `
+    <div class="product-card">
+      <div class="pc-img" ${thumb}>${icon}</div>
+      <div class="pc-body">
+        <div class="pc-cat">${escapeHtml(p.category)}</div>
+        <h3>${escapeHtml(p.name)}</h3>
+        <div class="pc-price">KSh ${p.price.toLocaleString()}${p.compareAtPrice ? `<span class="old">KSh ${p.compareAtPrice.toLocaleString()}</span>` : ""}</div>
+        <div class="pc-actions">
+          <button class="btn btn-outline btn-sm" onclick="openEditor('${p.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete('${p.id}','${escapeHtml(p.name).replace(/'/g,"\\'")}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str == null ? "" : String(str);
+  return d.innerHTML;
+}
+
+async function confirmDelete(id, name){
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  await fetch(`${API}/api/admin/products/${id}`, { method: "DELETE", credentials: "include" });
+  loadProducts();
+}
+
+// ---------------- PRODUCT EDITOR ----------------
+
+document.getElementById("addProductBtn").addEventListener("click", () => openEditor(null));
+document.getElementById("cancelModalBtn").addEventListener("click", closeEditor);
+document.getElementById("addColorBtn").addEventListener("click", () => {
+  colorRows.push({ name: "", hex: "#cccccc", imageId: null, previewUrl: null, fileToUpload: null });
+  renderColorRows();
+});
+
+async function openEditor(id){
+  currentProductId = id;
+  hideMsg(document.getElementById("modalMsg"));
+  document.getElementById("modalTitle").textContent = id ? "Edit Product" : "Add Product";
+
+  if (id) {
+    const res = await fetch(`${API}/api/admin/products/${id}`, { credentials: "include" });
+    const p = await res.json();
+    document.getElementById("fName").value = p.name;
+    document.getElementById("fCategory").value = p.category;
+    document.getElementById("fBadge").value = p.badge || "";
+    document.getElementById("fPrice").value = p.price;
+    document.getElementById("fCompareAt").value = p.compareAtPrice || "";
+    document.getElementById("fSizes").value = (p.sizes || []).join(", ");
+    document.getElementById("fDescription").value = p.description || "";
+    document.getElementById("fCare").value = p.care || "";
+    document.getElementById("fIsNew").checked = !!p.isNew;
+    document.getElementById("fIsBest").checked = !!p.isBest;
+    colorRows = p.colors.map(c => ({
+      name: c.name, hex: c.hex || "#cccccc", imageId: c.imageId,
+      previewUrl: c.imageId ? `${API}/api/images/${c.imageId}` : null, fileToUpload: null
+    }));
+  } else {
+    document.getElementById("fName").value = "";
+    document.getElementById("fCategory").value = "women";
+    document.getElementById("fBadge").value = "";
+    document.getElementById("fPrice").value = "";
+    document.getElementById("fCompareAt").value = "";
+    document.getElementById("fSizes").value = "";
+    document.getElementById("fDescription").value = "";
+    document.getElementById("fCare").value = "";
+    document.getElementById("fIsNew").checked = false;
+    document.getElementById("fIsBest").checked = false;
+    colorRows = [{ name: "", hex: "#cccccc", imageId: null, previewUrl: null, fileToUpload: null }];
+  }
+  renderColorRows();
+  document.getElementById("modalOverlay").classList.add("show");
+}
+
+function closeEditor(){
+  document.getElementById("modalOverlay").classList.remove("show");
+}
+
+function renderColorRows(){
+  const list = document.getElementById("colorsList");
+  list.innerHTML = colorRows.map((c, idx) => `
+    <div class="color-row">
+      <div class="thumb" style="${c.previewUrl ? `background-image:url('${c.previewUrl}')` : ""}">
+        <input type="file" accept="image/*" onchange="handleColorImage(${idx}, this.files[0])" />
+      </div>
+      <input type="text" placeholder="Color name (e.g. Red)" value="${escapeHtml(c.name)}" oninput="colorRows[${idx}].name = this.value" />
+      <input type="color" value="${c.hex}" oninput="colorRows[${idx}].hex = this.value" />
+      <button type="button" class="remove-color" onclick="removeColorRow(${idx})" title="Remove this color">✕</button>
+    </div>
+  `).join("");
+}
+
+function removeColorRow(idx){
+  colorRows.splice(idx, 1);
+  renderColorRows();
+}
+
+function handleColorImage(idx, file){
+  if (!file) return;
+  colorRows[idx].fileToUpload = file;
+  colorRows[idx].previewUrl = URL.createObjectURL(file);
+  renderColorRows();
+}
+
+document.getElementById("saveProductBtn").addEventListener("click", async () => {
+  const msgEl = document.getElementById("modalMsg");
+  hideMsg(msgEl);
+
+  const name = document.getElementById("fName").value.trim();
+  const category = document.getElementById("fCategory").value;
+  const price = parseInt(document.getElementById("fPrice").value, 10);
+  const compareAtRaw = document.getElementById("fCompareAt").value;
+  const compareAtPrice = compareAtRaw ? parseInt(compareAtRaw, 10) : null;
+  const sizesRaw = document.getElementById("fSizes").value.trim();
+  const sizes = sizesRaw ? sizesRaw.split(",").map(s => s.trim()).filter(Boolean) : null;
+  const badge = document.getElementById("fBadge").value || null;
+  const description = document.getElementById("fDescription").value.trim();
+  const care = document.getElementById("fCare").value.trim();
+  const isNew = document.getElementById("fIsNew").checked;
+  const isBest = document.getElementById("fIsBest").checked;
+
+  if (!name || !category || !price || price <= 0) {
+    showMsg(msgEl, "Name, category, and a valid price are required.", "error");
+    return;
+  }
+  if (colorRows.length === 0 || colorRows.some(c => !c.name.trim())) {
+    showMsg(msgEl, "Every color needs a name. Add at least one color.", "error");
+    return;
+  }
+
+  const saveBtn = document.getElementById("saveProductBtn");
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+  try {
+    // Upload any new images first, collecting imageIds for each color.
+    for (const c of colorRows) {
+      if (c.fileToUpload) {
+        const formData = new FormData();
+        formData.append("image", c.fileToUpload);
+        const res = await fetch(`${API}/api/admin/images`, {
+          method: "POST", credentials: "include", body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Image upload failed.");
+        c.imageId = data.imageId;
+      }
+    }
+
+    const payload = {
+      name, category, price, compareAtPrice, sizes, badge, description, care, isNew, isBest,
+      colors: colorRows.map(c => ({ name: c.name.trim(), hex: c.hex, imageId: c.imageId }))
+    };
+
+    const url = currentProductId ? `${API}/api/admin/products/${currentProductId}` : `${API}/api/admin/products`;
+    const method = currentProductId ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method, credentials: "include", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Could not save product.");
+
+    closeEditor();
+    loadProducts();
+  } catch (e) {
+    showMsg(msgEl, e.message, "error");
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save Product";
+  }
+});
+</script>
+</body>
+</html>
