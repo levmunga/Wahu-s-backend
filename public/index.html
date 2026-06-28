@@ -1001,230 +1001,31 @@ footer.site-footer{background:var(--ink);color:rgba(255,255,255,0.75);padding:4r
 const SELLER_PHONE = "254704060196"; // WhatsApp / M-Pesa business number
 const BUSINESS_NAME = "Wahu's Closet";
 
-const PRODUCTS = [
-  {
-    id:"p1",name:"Wrap Midi Dress",category:"women",price:3200,
-    badge:"Best Seller",rating:4.8,reviews:64,stock:"in",
-    desc:"A fluid, wrap-front midi cut from breathable crepe. Designed to move with you — from desk to dinner — with a flattering tie waist and soft drape.",
-    care:"Hand wash cold. Dry flat in shade. Cool iron if needed.",
-    colors:[
-      {name:"Terracotta",hex:"#C1633D",img:"pc-1"},
-      {name:"Ink Navy",hex:"#1E2A44",img:"pc-2"},
-      {name:"Sand",hex:"#D8C7A8",img:"pc-9"}
-    ],
-    sizes:["XS","S","M","L","XL"],
-    images:["pc-1","pc-9","pc-2"],
-    video:true,
-    isNew:false,isBest:true
-  },
-  {
-    id:"p2",name:"Tailored Wide-Leg Trousers",category:"men",price:2800,
-    badge:"New",rating:4.7,reviews:38,stock:"in",
-    desc:"Sharp, relaxed-through-the-leg trousers in a structured cotton-blend twill. Sits cleanly at the waist with a tapered finish for a modern silhouette.",
-    care:"Machine wash cold, inside out. Hang dry. Low iron.",
-    colors:[
-      {name:"Charcoal",hex:"#2B2D33",img:"pc-3"},
-      {name:"Stone",hex:"#A89F8C",img:"pc-10"}
-    ],
-    sizes:["30","32","34","36","38"],
-    images:["pc-3","pc-10"],
-    video:false,
-    isNew:true,isBest:false
-  },
-  {
-    id:"p3",name:"Structured Top-Handle Bag",category:"bags",price:4500,
-    badge:"Best Seller",rating:4.9,reviews:91,stock:"few",
-    desc:"A boxy, architectural top-handle bag in vegan leather. Roomy enough for daily essentials, polished enough for evenings out.",
-    care:"Wipe clean with a soft, dry cloth. Avoid direct sun exposure.",
-    colors:[
-      {name:"Cognac",hex:"#9C5A2E",img:"pc-5"},
-      {name:"Black",hex:"#15161A",img:"pc-3"},
-      {name:"Cream",hex:"#EDE6D6",img:"pc-9"}
-    ],
-    sizes:null,
-    images:["pc-5","pc-3","pc-9"],
-    video:true,
-    isNew:false,isBest:true
-  },
-  {
-    id:"p4",name:"Leather Slide Sandals",category:"shoes",price:2100,
-    badge:null,rating:4.6,reviews:27,stock:"in",
-    desc:"Minimal, padded-strap slides in soft full-grain leather. A warm-weather staple built to mould to your foot over time.",
-    care:"Wipe clean. Treat with leather conditioner monthly.",
-    colors:[
-      {name:"Tan",hex:"#C49A6C",img:"pc-6"},
-      {name:"Black",hex:"#1A1A1A",img:"pc-3"}
-    ],
-    sizes:["36","37","38","39","40","41","42"],
-    images:["pc-6","pc-3"],
-    video:false,
-    isNew:true,isBest:false
-  },
-  {
-    id:"p5",name:"Silk-Touch Slip Skirt",category:"women",price:2600,
-    badge:"New",rating:4.7,reviews:19,stock:"in",
-    desc:"A bias-cut slip skirt in a silky satin-finish fabric that catches the light beautifully. Pairs equally well with knitwear or heels.",
-    care:"Hand wash cold or dry clean. Do not wring.",
-    colors:[
-      {name:"Champagne",hex:"#E8D7B8",img:"pc-9"},
-      {name:"Merlot",hex:"#5C1A2B",img:"pc-1"}
-    ],
-    sizes:["XS","S","M","L"],
-    images:["pc-9","pc-1"],
-    video:false,
-    isNew:true,isBest:false
-  },
-  {
-    id:"p6",name:"Oxford Cotton Shirt",category:"men",price:2400,
-    badge:null,rating:4.5,reviews:33,stock:"in",
-    desc:"A crisp, breathable Oxford shirt cut for a tailored-but-comfortable fit. Works equally for the office and weekends.",
-    care:"Machine wash warm. Tumble dry low. Iron while damp.",
-    colors:[
-      {name:"White",hex:"#F5F5F0",img:"pc-10"},
-      {name:"Powder Blue",hex:"#A9C4DE",img:"pc-2"}
-    ],
-    sizes:["S","M","L","XL","XXL"],
-    images:["pc-10","pc-2"],
-    video:false,
-    isNew:false,isBest:false
-  },
-  {
-    id:"p7",name:"Matte Velvet Lipstick Trio",category:"beauty",price:1800,
-    badge:"Best Seller",rating:4.9,reviews:112,stock:"in",
-    desc:"Three long-wear, transfer-resistant matte shades in universally flattering tones. Lightweight formula that won't dry out lips.",
-    care:"Store upright, away from direct heat.",
-    colors:[
-      {name:"Set of 3",hex:"#9C2B3A",img:"pc-8"}
-    ],
-    sizes:null,
-    images:["pc-8"],
-    video:true,
-    isNew:false,isBest:true
-  },
-  {
-    id:"p8",name:"Signature Eau de Parfum",category:"beauty",price:3400,
-    badge:null,rating:4.8,reviews:48,stock:"few",
-    desc:"A warm, woody-floral fragrance with notes of bergamot, jasmine and sandalwood. Long-lasting and unmistakably elegant.",
-    care:"Store in a cool, dark place away from sunlight.",
-    colors:[
-      {name:"50ml",hex:"#C9A227",img:"pc-5"}
-    ],
-    sizes:null,
-    images:["pc-5"],
-    video:false,
-    isNew:false,isBest:false
-  },
-  {
-    id:"p9",name:"Kids Playground Sneakers",category:"children",price:1700,
-    badge:"New",rating:4.6,reviews:21,stock:"in",
-    desc:"Lightweight, easy-velcro sneakers built for play. Breathable lining and a flexible rubber sole that grips on any surface.",
-    care:"Wipe clean. Air dry only — avoid direct heat.",
-    colors:[
-      {name:"Sky Blue",hex:"#5C9DD9",img:"pc-4"},
-      {name:"Coral",hex:"#E07856",img:"pc-6"}
-    ],
-    sizes:["EU28","EU30","EU32","EU34"],
-    images:["pc-4","pc-6"],
-    video:false,
-    isNew:true,isBest:false
-  },
-  {
-    id:"p10",name:"Soft Cotton Romper",category:"children",price:1500,
-    badge:null,rating:4.7,reviews:16,stock:"in",
-    desc:"Breathable, GOTS-friendly cotton romper with snap closures for easy changing. Pre-washed for extra softness against delicate skin.",
-    care:"Machine wash warm with like colors. Tumble dry low.",
-    colors:[
-      {name:"Butter Yellow",hex:"#E8C468",img:"pc-11"},
-      {name:"Sage",hex:"#9CAE8C",img:"pc-4"}
-    ],
-    sizes:["0-3M","3-6M","6-12M","12-18M"],
-    images:["pc-11","pc-4"],
-    video:false,
-    isNew:false,isBest:false
-  },
-  {
-    id:"p11",name:"Lace-Trim Bodysuit",category:"innerwear",price:1400,
-    badge:null,rating:4.5,reviews:24,stock:"few",
-    desc:"A soft, stretch-jersey bodysuit finished with delicate lace trim. Seamless construction for a smooth, invisible fit under clothing.",
-    care:"Hand wash cold. Lay flat to dry.",
-    colors:[
-      {name:"Blush",hex:"#E0B6B6",img:"pc-8"},
-      {name:"Black",hex:"#1A1A1A",img:"pc-3"}
-    ],
-    sizes:["S","M","L","XL"],
-    images:["pc-8","pc-3"],
-    video:false,
-    isNew:false,isBest:false
-  },
-  {
-    id:"p12",name:"Gold-Tone Layer Necklace",category:"accessories",price:1900,
-    badge:"New",rating:4.8,reviews:29,stock:"in",
-    desc:"A delicate three-layer necklace in tarnish-resistant gold-tone plating. Designed to be worn alone or stacked for more drama.",
-    care:"Keep dry. Store separately to avoid scratches.",
-    colors:[
-      {name:"Gold",hex:"#C9A227",img:"pc-5"},
-      {name:"Silver",hex:"#C8CCD2",img:"pc-10"}
-    ],
-    sizes:null,
-    images:["pc-5","pc-10"],
-    video:false,
-    isNew:true,isBest:false
-  },
-  {
-    id:"p13",name:"Xuanli Lisa 2-in-1 Premium Handbag Set",category:"bags",price:2300,compareAtPrice:3000,
-    badge:"Sale",rating:4.9,reviews:12,stock:"in",
-    desc:"A structured top-handle tote paired with a matching zip wristlet wallet — the complete set in one purchase. Crafted in soft-touch vegan leather with polished gold-tone hardware, a detachable crossbody strap, and a roomy structured interior built for everyday essentials.",
-    care:"Wipe clean with a soft, dry cloth. Avoid direct sun exposure and store stuffed with paper to hold shape.",
-    colors:[
-      {name:"Red",hex:"#6B1E2B",img:"xl8218-red"},
-      {name:"Pink",hex:"#E8B9C2",img:"xl8218-pink"},
-      {name:"Khaki",hex:"#D8C9AE",img:"xl8218-khaki"},
-      {name:"Brown",hex:"#A85C28",img:"xl8218-brown"},
-      {name:"Green",hex:"#4A4E33",img:"xl8218-green"},
-      {name:"Black",hex:"#1A1A1A",img:"xl8218-black"}
-    ],
-    sizes:null,
-    images:["xl8218-red","xl8218-pink","xl8218-khaki","xl8218-brown","xl8218-green","xl8218-black"],
-    video:false,
-    isNew:true,isBest:false
-  },
-  {
-    id:"p14",name:"Mavercik Kawy Girl Tracksuit Set",category:"women",price:2000,compareAtPrice:2999,
-    badge:"Sale",rating:4.8,reviews:9,stock:"in",
-    desc:"A relaxed-fit two-piece set: a cropped tee and matching wide-leg sweatpants, both finished with bold graphic print detailing. Soft, breathable cotton-blend fabric made for easy everyday wear.",
-    care:"Machine wash cold with like colors. Do not bleach. Tumble dry low or hang to dry.",
-    colors:[
-      {name:"Red",hex:"#A8222E",img:"mavercik-red"},
-      {name:"Mauve",hex:"#B98598",img:"mavercik-mauve"},
-      {name:"Maroon",hex:"#5C1A28",img:"mavercik-maroon"},
-      {name:"Black",hex:"#1A1A1A",img:"mavercik-black"},
-      {name:"Olive",hex:"#4B4F33",img:"mavercik-olive"},
-      {name:"White",hex:"#F5F5F0",img:"mavercik-white"}
-    ],
-    sizes:["S","M","L","XL"],
-    images:["mavercik-red","mavercik-mauve","mavercik-maroon","mavercik-black","mavercik-olive","mavercik-white"],
-    video:false,
-    isNew:true,isBest:false
-  },
-  {
-    id:"p15",name:"Xuanli Lisa Chain-Strap Flap Handbag Set",category:"bags",price:2300,compareAtPrice:2999,
-    badge:"Sale",rating:4.8,reviews:7,stock:"in",
-    desc:"A structured flap-front shoulder bag paired with a matching zip wallet — trapezoid silhouette, polished gold-tone chain straps, and a clean front flap with a sleek twist-lock-style clasp. Compact enough for evenings, roomy enough for daily use.",
-    care:"Wipe clean with a soft, dry cloth. Avoid direct sun exposure and store stuffed with paper to hold shape.",
-    colors:[
-      {name:"Brown",hex:"#A85C28",img:"xl8112-brown"},
-      {name:"Pink",hex:"#E8B9C2",img:"xl8112-pink"},
-      {name:"Coffee",hex:"#4A3528",img:"xl8112-coffee"},
-      {name:"Black",hex:"#1A1A1A",img:"xl8112-black"},
-      {name:"Red",hex:"#5C1A28",img:"xl8112-red"}
-    ],
-    sizes:null,
-    images:["xl8112-brown","xl8112-pink","xl8112-coffee","xl8112-black","xl8112-red"],
-    video:false,
-    isNew:true,isBest:false
-  }
-];
+// ── Products: fetched from API ──────────────────────────────────────
+let PRODUCTS = [];
 
+async function loadProducts() {
+  try {
+    const res = await fetch('/api/products');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    PRODUCTS = await res.json();
+  } catch (err) {
+    console.error('Failed to load products:', err);
+    PRODUCTS = [];
+  }
+  renderAllProducts();
+}
+
+function renderAllProducts() {
+  const grid = document.getElementById('product-grid'); // adjust selector if different
+  if (!grid) return;
+  grid.innerHTML = '';
+  PRODUCTS.forEach(product => {
+    grid.appendChild(renderProductCard(product));
+  });
+}
+
+document.addEventListener('DOMContentLoaded', loadProducts);
 const PRODUCT_COLOR_BG = {
   "pc-1":"linear-gradient(135deg,#f8d7da,#f1a7af)",
   "pc-2":"linear-gradient(135deg,#d1e8ff,#a3c4f3)",
