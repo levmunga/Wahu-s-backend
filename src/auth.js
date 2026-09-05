@@ -1,9 +1,7 @@
-// auth.js
-// Handles admin password hashing and session tokens (JWT in an httpOnly cookie).
-
+// auth.js — PostgreSQL version
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const db = require("./db");
+const pool = require("./db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-this-in-production";
 const COOKIE_NAME = "wahus_admin_session";
@@ -17,36 +15,41 @@ function verifyPassword(plain, hash) {
   return bcrypt.compareSync(plain, hash);
 }
 
-function createAdminIfNoneExists(username, plainPassword) {
-  const existing = db.prepare("SELECT id FROM admin_users LIMIT 1").get();
-  if (existing) return { created: false, reason: "An admin account already exists." };
+async function createAdminIfNoneExists(username, plainPassword) {
+  const { rows } = await pool.query("SELECT id FROM admin_users LIMIT 1");
+  if (rows.length > 0) return { created: false, reason: "An admin account already exists." };
   const hash = hashPassword(plainPassword);
-  db.prepare("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)").run(username, hash);
+  await pool.query(
+    "INSERT INTO admin_users (username, password_hash) VALUES ($1, $2)",
+    [username, hash]
+  );
   return { created: true };
 }
 
-function findAdminByUsername(username) {
-  return db.prepare("SELECT * FROM admin_users WHERE username = ?").get(username);
+async function findAdminByUsername(username) {
+  const { rows } = await pool.query(
+    "SELECT * FROM admin_users WHERE username = $1", [username]
+  );
+  return rows[0] || null;
 }
 
-function issueToken(adminId, username) {
-  return jwt.sign({ sub: adminId, username }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+function issueToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
 }
 
 function verifyToken(token) {
   try {
     return jwt.verify(token, JWT_SECRET);
-  } catch (e) {
+  } catch {
     return null;
   }
 }
 
-// Express middleware: blocks the request unless a valid admin session cookie is present.
 function requireAdmin(req, res, next) {
-  const token = req.cookies && req.cookies[COOKIE_NAME];
-  if (!token) return res.status(401).json({ error: "Not logged in." });
+  const token = req.cookies?.[COOKIE_NAME];
+  if (!token) return res.status(401).json({ error: "Not authenticated" });
   const payload = verifyToken(token);
-  if (!payload) return res.status(401).json({ error: "Session expired. Please log in again." });
+  if (!payload) return res.status(401).json({ error: "Invalid or expired session" });
   req.admin = payload;
   next();
 }
