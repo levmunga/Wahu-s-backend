@@ -1,49 +1,58 @@
-// products.js
-// Data access layer for products, colors, and images.
-// Keeping this separate from the route handlers (server.js) makes the
-// query logic easy to test and easy to swap later if you ever move off SQLite.
-
-const db = require("./db");
-const crypto = require("crypto");
+// products.js — PostgreSQL version
+const pool = require('./db');
+const crypto = require('crypto');
 
 function newId(prefix) {
-  return `${prefix}_${crypto.randomBytes(6).toString("hex")}`;
+  return `${prefix}_${crypto.randomBytes(6).toString('hex')}`;
 }
 
-function saveImage(buffer, mimeType) {
-  const id = newId("img");
-  db.prepare("INSERT INTO images (id, data, mime_type) VALUES (?, ?, ?)").run(id, buffer, mimeType);
+async function saveImage(buffer, mimeType) {
+  const id = newId('img');
+  await pool.query(
+    'INSERT INTO images (id, data, mime_type) VALUES ($1, $2, $3)',
+    [id, buffer, mimeType]
+  );
   return id;
 }
 
-function getImage(id) {
-  return db.prepare("SELECT data, mime_type FROM images WHERE id = ?").get(id);
+async function getImage(id) {
+  const { rows } = await pool.query(
+    'SELECT data, mime_type FROM images WHERE id = $1', [id]
+  );
+  return rows[0] || null;
 }
 
-function deleteImage(id) {
-  db.prepare("DELETE FROM images WHERE id = ?").run(id);
+async function deleteImage(id) {
+  await pool.query('DELETE FROM images WHERE id = $1', [id]);
 }
 
-function listProducts({ category } = {}) {
+async function listProducts({ category } = {}) {
   let rows;
-  if (category && category !== "all") {
-    rows = db.prepare("SELECT * FROM products WHERE category = ? ORDER BY created_at DESC").all(category);
+  if (category && category !== 'all') {
+    const r = await pool.query(
+      'SELECT * FROM products WHERE category = $1 ORDER BY created_at DESC', [category]
+    );
+    rows = r.rows;
   } else {
-    rows = db.prepare("SELECT * FROM products ORDER BY created_at DESC").all();
+    const r = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
+    rows = r.rows;
   }
-  return rows.map(attachColors);
+  return Promise.all(rows.map(attachColors));
 }
 
-function getProduct(id) {
-  const row = db.prepare("SELECT * FROM products WHERE id = ?").get(id);
-  if (!row) return null;
-  return attachColors(row);
+async function getProduct(id) {
+  const { rows } = await pool.query(
+    'SELECT * FROM products WHERE id = $1', [id]
+  );
+  if (!rows[0]) return null;
+  return attachColors(rows[0]);
 }
 
-function attachColors(productRow) {
-  const colors = db
-    .prepare("SELECT * FROM product_colors WHERE product_id = ? ORDER BY sort_order ASC")
-    .all(productRow.id);
+async function attachColors(productRow) {
+  const { rows: colors } = await pool.query(
+    'SELECT * FROM product_colors WHERE product_id = $1 ORDER BY sort_order ASC',
+    [productRow.id]
+  );
   return {
     id: productRow.id,
     name: productRow.name,
@@ -61,115 +70,75 @@ function attachColors(productRow) {
     reviews: productRow.reviews,
     createdAt: productRow.created_at,
     updatedAt: productRow.updated_at,
-    colors: colors.map((c) => ({
+    colors: colors.map(c => ({
       id: c.id,
       name: c.name,
       hex: c.hex,
       imageId: c.image_id,
-    })),
+      sortOrder: c.sort_order
+    }))
   };
 }
 
-function createProduct(data) {
-  const id = newId("p");
-  db.prepare(
-    `INSERT INTO products
-      (id, name, category, price, compare_at_price, description, care, sizes, badge, stock, is_new, is_best, rating, reviews)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    id,
-    data.name,
-    data.category,
-    data.price,
-    data.compareAtPrice || null,
-    data.description || "",
-    data.care || "",
-    data.sizes ? JSON.stringify(data.sizes) : null,
-    data.badge || null,
-    data.stock || "in",
-    data.isNew ? 1 : 0,
-    data.isBest ? 1 : 0,
-    data.rating != null ? data.rating : 5.0,
-    data.reviews != null ? data.reviews : 0
+async function createProduct(data) {
+  const id = newId('prod');
+  await pool.query(
+    `INSERT INTO products (id, name, category, price, compare_at_price, description, care, sizes, badge, stock, is_new, is_best, rating, reviews)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
+    [id, data.name, data.category, data.price, data.compareAtPrice || null,
+     data.description, data.care, data.sizes ? JSON.stringify(data.sizes) : null,
+     data.badge, data.stock || 0, data.isNew || false, data.isBest || false,
+     data.rating || 0, data.reviews || 0]
   );
-
-  if (Array.isArray(data.colors)) {
-    data.colors.forEach((color, idx) => {
-      const colorId = newId("col");
-      db.prepare(
-        "INSERT INTO product_colors (id, product_id, name, hex, image_id, sort_order) VALUES (?, ?, ?, ?, ?, ?)"
-      ).run(colorId, id, color.name, color.hex || null, color.imageId || null, idx);
-    });
-  }
-
   return getProduct(id);
 }
 
-function updateProduct(id, data) {
-  const existing = db.prepare("SELECT id FROM products WHERE id = ?").get(id);
-  if (!existing) return null;
-
-  db.prepare(
-    `UPDATE products SET
-      name = ?, category = ?, price = ?, compare_at_price = ?, description = ?,
-      care = ?, sizes = ?, badge = ?, stock = ?, is_new = ?, is_best = ?,
-      rating = ?, reviews = ?, updated_at = datetime('now')
-     WHERE id = ?`
-  ).run(
-    data.name,
-    data.category,
-    data.price,
-    data.compareAtPrice || null,
-    data.description || "",
-    data.care || "",
-    data.sizes ? JSON.stringify(data.sizes) : null,
-    data.badge || null,
-    data.stock || "in",
-    data.isNew ? 1 : 0,
-    data.isBest ? 1 : 0,
-    data.rating != null ? data.rating : 5.0,
-    data.reviews != null ? data.reviews : 0,
-    id
+async function updateProduct(id, data) {
+  await pool.query(
+    `UPDATE products SET name=$1, category=$2, price=$3, compare_at_price=$4,
+     description=$5, care=$6, sizes=$7, badge=$8, stock=$9, is_new=$10,
+     is_best=$11, rating=$12, reviews=$13, updated_at=now()::text WHERE id=$14`,
+    [data.name, data.category, data.price, data.compareAtPrice || null,
+     data.description, data.care, data.sizes ? JSON.stringify(data.sizes) : null,
+     data.badge, data.stock || 0, data.isNew || false, data.isBest || false,
+     data.rating || 0, data.reviews || 0, id]
   );
-
-  // Replace colors wholesale on update — simplest correct approach for an admin panel.
-  if (Array.isArray(data.colors)) {
-    db.prepare("DELETE FROM product_colors WHERE product_id = ?").run(id);
-    data.colors.forEach((color, idx) => {
-      const colorId = newId("col");
-      db.prepare(
-        "INSERT INTO product_colors (id, product_id, name, hex, image_id, sort_order) VALUES (?, ?, ?, ?, ?, ?)"
-      ).run(colorId, id, color.name, color.hex || null, color.imageId || null, idx);
-    });
-  }
-
   return getProduct(id);
 }
 
-function deleteProduct(id) {
-  // Clean up any images this product's colors referenced, then the product itself.
-  // product_colors rows are removed automatically via ON DELETE CASCADE.
-  const colors = db.prepare("SELECT image_id FROM product_colors WHERE product_id = ?").all(id);
-  db.prepare("DELETE FROM products WHERE id = ?").run(id);
-  colors.forEach((c) => {
-    if (c.image_id) {
-      // Only delete the image if no other color references it (rare reuse case).
-      const stillUsed = db
-        .prepare("SELECT 1 FROM product_colors WHERE image_id = ? LIMIT 1")
-        .get(c.image_id);
-      if (!stillUsed) deleteImage(c.image_id);
-    }
-  });
-  return true;
+async function deleteProduct(id) {
+  await pool.query('DELETE FROM products WHERE id = $1', [id]);
+}
+
+async function addColor(productId, colorData) {
+  const id = newId('col');
+  await pool.query(
+    'INSERT INTO product_colors (id, product_id, name, hex, image_id, sort_order) VALUES ($1,$2,$3,$4,$5,$6)',
+    [id, productId, colorData.name, colorData.hex, colorData.imageId || null, colorData.sortOrder || 0]
+  );
+  return id;
+}
+
+async function deleteColor(id) {
+  await pool.query('DELETE FROM product_colors WHERE id = $1', [id]);
+}
+
+async function findAdminUser(username) {
+  const { rows } = await pool.query(
+    'SELECT * FROM admin_users WHERE username = $1', [username]
+  );
+  return rows[0] || null;
+}
+
+async function createAdminUser(username, passwordHash) {
+  await pool.query(
+    'INSERT INTO admin_users (username, password_hash) VALUES ($1, $2)',
+    [username, passwordHash]
+  );
 }
 
 module.exports = {
-  saveImage,
-  getImage,
-  deleteImage,
-  listProducts,
-  getProduct,
-  createProduct,
-  updateProduct,
-  deleteProduct,
+  saveImage, getImage, deleteImage,
+  listProducts, getProduct, createProduct, updateProduct, deleteProduct,
+  addColor, deleteColor, findAdminUser, createAdminUser
 };
