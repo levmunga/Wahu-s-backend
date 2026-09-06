@@ -73,21 +73,21 @@ app.get("/api/images/:id", (req, res) => {
 
 // One-time setup: create the first (and only) admin account.
 // This route locks itself after the first admin is created.
-app.post("/api/admin/setup", (req, res) => {
+app.post("/api/admin/setup", async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password || password.length < 6) {
     return res.status(400).json({ error: "Username and a password of at least 6 characters are required." });
   }
-  const result = auth.createAdminIfNoneExists(username, password);
+  const result = await auth.createAdminIfNoneExists(username, password);
   if (!result.created) {
     return res.status(409).json({ error: result.reason });
   }
   res.json({ ok: true });
 });
 
-app.post("/api/admin/login", (req, res) => {
+app.post("/api/admin/login", async (req, res) => {
   const { username, password } = req.body || {};
-  const admin = auth.findAdminByUsername(username || "");
+  const admin = await auth.findAdminByUsername(username || "");
   if (!admin || !auth.verifyPassword(password || "", admin.password_hash)) {
     return res.status(401).json({ error: "Incorrect username or password." });
   }
